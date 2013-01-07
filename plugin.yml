@@ -1,0 +1,6 @@
+name: DynCap
+version: 1.0.0
+main: com.untamedears.DynCap.DynCapPlugin
+commands:
+  setcap
+  getcap
