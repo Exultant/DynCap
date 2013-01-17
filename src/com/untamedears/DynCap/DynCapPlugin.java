@@ -82,15 +82,6 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 	}
 	
 	public int getPlayerCount() {
-		int playerCount = 0;
-		
-		List<World> worlds = this.getServer().getWorlds();
-		for (World world : worlds) {
-			if (world != null) {
-				playerCount += world.getPlayers().size();
-			}
-		}
-		
-		return playerCount;
+		return this.getServer().getOnlinePlayers().length;
 	}
 }
