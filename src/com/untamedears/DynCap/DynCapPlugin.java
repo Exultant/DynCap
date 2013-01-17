@@ -58,7 +58,7 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 	}
 	
 	private void updatePlayerCap() {
-		int playerCount = getPlayerCount();
+		int playerCount = getPlayerCount()-1;
 		if (playerCount >= dynamicPlayerCap) {
 			setWhitelist(true);
 		} else if (playerCount < dynamicPlayerCap) {
