@@ -1,6 +1,17 @@
 name: DynCap
-version: 1.0.0
+version: 1.0.1
 main: com.untamedears.DynCap.DynCapPlugin
+author: Exultant
 commands:
   setcap:
+    description: Sets the player cap
+    usage: /setcap <Max Players>
+    permission: dyncap.console
   getcap:
+    description: Displays the current player cap
+    usage: /getcap
+    permission: dyncap.console
+permissions:
+  dyncap.console:
+    description: Console commands for DynCap
+    default: false
