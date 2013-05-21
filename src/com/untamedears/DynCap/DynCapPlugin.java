@@ -1,10 +1,12 @@
 package com.untamedears.DynCap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -17,9 +19,15 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 	private DynCapCommands commands;
 	private int dynamicPlayerCap = 1000;
 	private Logger log;
-	private boolean whiteListEnabled = false;
+	//private boolean whiteListEnabled = false;
 	private List <QueueItem> loginQueue = new ArrayList<QueueItem>();
-
+	private String firstJoinMessage;
+	private String updateMessage;
+	private String toFastJoinMessage;
+	private int minimumJoinTime;
+	private int timeOutTime;
+	private Set<String> whiteListedPlayers;
+	
 	public void onEnable() {
 		log = this.getLogger();
 		commands = new DynCapCommands(this, log);
@@ -32,19 +40,31 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 		// Give the console permission
 		ConsoleCommandSender console = getServer().getConsoleSender();
 		console.addAttachment(this, "dyncap.console", true);
+				
+		this.saveDefaultConfig();
+		FileConfiguration config = getConfig();
+		firstJoinMessage = config.getString("messages.firstJoin", "The server is full, you have been added to the login queue. Your current position is %d. Please try again in no less than 10 seconds, and no more than 60 seconds.");
+		//firstJoinMessage.replace("^d^", "%d");
+		toFastJoinMessage = config.getString("messages.toFastJoin", "You rejoined way to quick, you have been moved to the end of the login queue. Next time please join no less than every 10 seconds.");
+		updateMessage = config.getString("messages.updateMessage", "Your posistion in the queue is %d. Please try again in no less than 10 seconds, and no more than 60 seconds.");
+		//updateMessage.replace("^d^", "%d");
+		minimumJoinTime = config.getInt("timers.minimumJoinTime", 5);
+		timeOutTime = config.getInt("timers.timeOutTime", 60);
+		whiteListedPlayers = config.getConfigurationSection("whiteListedPlayers").getKeys(false);
 		this.getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable()
 		{
 		    @Override  
 		    public void run() 
 		    {
-		    	removeOldQueueItems(loginQueue, 60);
-		    }}, 0L, 20);
+		    	removeOldQueueItems(loginQueue, timeOutTime);
+		    }}, 0L, 20);		
 	}
 
 	public void onDisable() {}
 	
 	@EventHandler
-	public void onServerListPingEvent(ServerListPingEvent event) {
+	public void onServerListPingEvent(ServerListPingEvent event) 
+	{
 		event.setMaxPlayers(getPlayerCap());
 	}
 
@@ -105,6 +125,14 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 	{
 		//log.info("login event called!");
 		String playerName = event.getName().toLowerCase();
+		
+		//if the player is whitelisted(admin/mod)
+		if (whiteListedPlayers.contains(playerName))
+		{
+			event.allow();
+			return;
+		}
+		
 		int position = getQueuePosition(loginQueue, playerName);
 		//log.info("posistion is:" + position);
 		//if the server is not full, and there is no queue
@@ -128,16 +156,16 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 			//if the server has a queue, and there is not enough space for the player
 			else if (position != -1)
 			{
-				if (loginQueue.get(position).getSecondsSinceLastAttempt() < 5)
+				if (loginQueue.get(position).getSecondsSinceLastAttempt() <= minimumJoinTime)
 				{
 					loginQueue.remove(position);
-					event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, "You rejoined way to quick, you have been moved to the end of the login queue. Next time please join no less than every 10 seconds.");
+					event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, toFastJoinMessage);
 					return;
 				}
 				else
 				{
 				loginQueue.get(position).updateDate();
-				event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, "Your posistion in the queue is: " + (position + 1) + ". Please try again in no less than 10 seconds, and no more than 60 seconds.");
+				event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, String.format(updateMessage, (position + 1)));
 				return;
 				}
 			}
@@ -146,7 +174,7 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 				//log.info("disallowed " + playerName + " added him to queue");
 				QueueItem queueItem = new QueueItem(playerName);
 				loginQueue.add(queueItem);
-				event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, "The server is full, you have been added to the login queue. Your current position is: " + loginQueue.size() + ". Please try again in no less than 10 seconds, and no more than 60 seconds.");
+				event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, String.format(firstJoinMessage, loginQueue.size()));
 				return;
 			}
 		}
