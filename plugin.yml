@@ -11,6 +11,14 @@ commands:
     description: Displays the current player cap
     usage: /getcap
     permission: dyncap.console
+  getqueuesize:
+    description: Displays the current player queue size
+    usage: /getqueuesize
+    permission: dyncap.console
+  reloadqueue:
+    description: Reload the config.yml of dyncap
+    usage: /reloadQueue
+    permission: dyncap.console
 permissions:
   dyncap.console:
     description: Console commands for DynCap

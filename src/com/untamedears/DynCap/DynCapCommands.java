@@ -23,14 +23,19 @@ public class DynCapCommands implements CommandExecutor {
 		if (sender instanceof Player) {
 			return false;
 		}
-		if (label.equalsIgnoreCase("setcap")) {
+		if (label.equalsIgnoreCase("setCap")) {
 			return setcapCmd(args);
-		} else if (label.equalsIgnoreCase("getcap")) {
+		} else if (label.equalsIgnoreCase("getCap")) {
 			return getcapCmd();
+		} else if (label.equalsIgnoreCase("getQueueSize")) {
+			return getQueueSize();
+		} else if (label.equalsIgnoreCase("reloadQueue")) {
+			return reloadQueueConfig();
 		}
 		return false;
 	}
 	
+
 	private boolean setcapCmd(String[] args) {
 		if (args.length < 1 || args.length > 1) { return false; }
 		int cap = 1000;
@@ -54,5 +59,21 @@ public class DynCapCommands implements CommandExecutor {
 		log.info(message);
 		return true;
 	}
+	
+	private boolean getQueueSize() 
+	{
+		Integer queueSize = plugin.getQueueSize();
+		log.info(queueSize + " players in the queue.");
+		return true;
+	}
+
+	private boolean reloadQueueConfig() 
+	{
+		plugin.reloadConfig();
+		plugin.initConfig();
+		log.info("queue config reloaded");
+		return true;
+	}
+
 
 }
