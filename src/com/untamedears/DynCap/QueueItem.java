@@ -5,12 +5,14 @@ import java.util.concurrent.TimeUnit;
 
 public class QueueItem 
 {
+	private Date firstAttempt;
 	private Date lastAttempt;
 	private String name;
 	
 	public QueueItem(String playerName)
 	{
 		lastAttempt = new Date();
+		firstAttempt = new Date();
 		name = playerName;
 	}
 	public Date getLastAttempt()
@@ -21,6 +23,11 @@ public class QueueItem
 	{
 		Date now = new Date();
 		return (int) TimeUnit.MILLISECONDS.toSeconds(now.getTime() - lastAttempt.getTime());
+	}
+	public int getSecondsSinceFirstAttempt()
+	{
+		Date now = new Date();
+		return (int) TimeUnit.MILLISECONDS.toSeconds(now.getTime() - firstAttempt.getTime());
 	}
 	public void updateDate()
 	{

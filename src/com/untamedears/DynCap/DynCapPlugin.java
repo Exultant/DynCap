@@ -19,7 +19,8 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 	private DynCapCommands commands;
 	private int dynamicPlayerCap = 175;
 	private Logger log;
-	//private boolean whiteListEnabled = false;
+	private float averageTimeToJoin = 0F;
+	private int numberOfJoins = 0;
 	private List <QueueItem> loginQueue = new ArrayList<QueueItem>();
 	private String firstJoinMessage;
 	private String updateMessage;
@@ -52,7 +53,7 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 		    public void run() 
 		    {
 		    	removeOldQueueItems(loginQueue, timeOutTime);
-		    }}, 0L, 20);		
+		    }}, 0L, 100);		
 	}
 
 	public void onDisable() {}
@@ -105,7 +106,7 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 			return loginQueue.get(queueIndex);
 		}
 	}
-		
+			
 	@EventHandler(priority=EventPriority.LOWEST, ignoreCancelled = false)
 	public void onAsyncPlayerPreLoginEvent(AsyncPlayerPreLoginEvent event) 
 	{
@@ -131,6 +132,7 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 		{
 			//log.info("allowed " + playerName + " to join, server is not full and has no queue!");
 			event.allow();
+			updateAverageTimeToJoin(0);
 			return;
 		}
 		//server is either full, or has a queue
@@ -141,6 +143,7 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 			{
 				//log.info("allowed " + playerName + " to join, server is not full and he is in a queue!");
 				event.allow();
+				updateAverageTimeToJoin(loginQueue.get(position).getSecondsSinceFirstAttempt());
 				loginQueue.remove(position);
 				return;
 			}
@@ -169,6 +172,7 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 					{
 						loginQueue.remove(position);
 					}
+					updateAverageTimeToJoin(0);
 					event.allow();
 					return;
 				}
@@ -198,7 +202,27 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 			}
 		}
 		return -1;
+	}	
+	
+	public void updateAverageTimeToJoin(int newJoinTime)
+	{
+		numberOfJoins++;
+		Float tempFloat = Integer.valueOf(numberOfJoins).floatValue();
+		Float tempFloat2 = Integer.valueOf(newJoinTime).floatValue();
+		averageTimeToJoin = ((tempFloat -1F)/tempFloat) * averageTimeToJoin + (tempFloat2/tempFloat);
 	}
+	
+	public void resetAverageTimeToJoin()
+	{
+		averageTimeToJoin = 0F;
+		numberOfJoins = 0;
+	}
+	
+	public float getAverageTimeToJoin()
+	{
+		return averageTimeToJoin;
+	}
+	
 	//timeOut is in seconds
 	private void removeOldQueueItems(List<QueueItem> queue, int timeOut)
 	{
@@ -215,5 +239,6 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 			}
 		}
 	}
+
 }
 

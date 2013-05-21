@@ -24,6 +24,16 @@ commands:
     usage: /getqueueinfo <start index or player name> optional if first paramter is a index <end index>
     aliases: gqi
     permission: dyncap.console
+  getjoinaverage:
+    description: Gets the average amount of time spent in the login queue, before joining.
+    usage: /getjoinaverage
+    aliases: gja
+    permission: dyncap.console
+  resetjoinaverage:
+    description: Resets the average amount of time
+    usage: /resetjoinaverage
+    aliases: rja
+    permission: dyncap.console
 permissions:
   dyncap.console:
     description: Console commands for DynCap

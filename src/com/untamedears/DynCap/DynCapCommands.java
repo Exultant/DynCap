@@ -36,12 +36,15 @@ public class DynCapCommands implements CommandExecutor {
 		} else if (label.equalsIgnoreCase("reloadQueue")) {
 			return reloadQueueConfig();
 		} else if (label.equalsIgnoreCase("getqueueinfo") || label.equalsIgnoreCase("gqi")) {
-			return getqueueinfo(args);
+			return getQueueInfo(args);
+		} else if (label.equalsIgnoreCase("getjoinaverage") || label.equalsIgnoreCase("gja")) {
+			return getJoinAverage();
+		} else if (label.equalsIgnoreCase("resetjoinaverage") || label.equalsIgnoreCase("rja")) {
+			return resetJoinAverage();
 		}
 		return false;
 	}
 	
-
 	private boolean setcapCmd(String[] args) {
 		if (args.length < 1 || args.length > 1) { return false; }
 		int cap = 1000;
@@ -92,7 +95,7 @@ public class DynCapCommands implements CommandExecutor {
 		return true;
 	}
 	
-	private boolean getqueueinfo(String[] args) 
+	private boolean getQueueInfo(String[] args) 
 	{
 		if (args.length < 1 || args.length > 2) { return false; }
 		
@@ -169,4 +172,20 @@ public class DynCapCommands implements CommandExecutor {
 	    // only got here if we didn't return false
 	    return true;
 	}
+	
+
+	private boolean resetJoinAverage() 
+	{
+		plugin.resetAverageTimeToJoin();
+		log.info("Average join time has been reset!");
+		return true;
+	}
+
+	private boolean getJoinAverage() 
+	{
+		float average = plugin.getAverageTimeToJoin();
+		log.info("Average join time is " + average + " seconds.");
+		return true;
+	}
+
 }
