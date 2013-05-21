@@ -59,20 +59,20 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 
 	public void setPlayerCap(int cap) {
 		dynamicPlayerCap = cap;
-		updatePlayerCap(getPlayerCount());
+		//updatePlayerCap(getPlayerCount());
 	}
 
 	public int getPlayerCap() {
 		return dynamicPlayerCap;
 	}
 
-	private void updatePlayerCap(int playerCount) {
+	/*private void updatePlayerCap(int playerCount) {
 		if (playerCount >= dynamicPlayerCap) {
 			//setWhitelist(true, playerCount);
 		} else if (playerCount < dynamicPlayerCap) {
 			//setWhitelist(false, playerCount);
 		}
-	}
+	}*/
 /*
 	private void setWhitelist(boolean enabled, int playerCount) {
 		if ((enabled && !whiteListEnabled) || (!enabled && whiteListEnabled)) {
@@ -122,7 +122,8 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 			//if the server has a queue, and there is not enough space for the player
 			else if (position != -1)
 			{
-				event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, "Your posistion in the queue is: " + (position + 1) + ". Please try again in 15 seconds");
+				loginQueue.get(position).updateDate();
+				event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, "Your posistion in the queue is: " + (position + 1) + ". Please try again in no less than 10 seconds, and no more than 60 seconds.");
 				return;
 			}
 			else
@@ -130,7 +131,7 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 				//log.info("disallowed " + playerName + " added him to queue");
 				QueueItem queueItem = new QueueItem(playerName);
 				loginQueue.add(queueItem);
-				event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, "The server is full, you have been added to the queue. Your position is:" + loginQueue.size() + ". Please try again in 15 seconds");
+				event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, "The server is full, you have been added to the login queue. Your current position is: " + loginQueue.size() + ". Please try again in no less than 10 seconds, and no more than 60 seconds.");
 				return;
 			}
 		}
