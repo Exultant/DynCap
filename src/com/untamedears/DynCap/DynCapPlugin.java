@@ -185,7 +185,7 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 				if ((!loginQueue.isEmpty() && loginQueue.size() <= (getPlayerCap() - getPlayerCount())))
 				{
 					//if for some reason the person is in the queue remove them
-					if (position == -1)
+					if (position != -1)
 					{
 						loginQueue.remove(position);
 					}
