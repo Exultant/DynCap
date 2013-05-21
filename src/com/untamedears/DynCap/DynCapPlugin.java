@@ -122,9 +122,18 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 			//if the server has a queue, and there is not enough space for the player
 			else if (position != -1)
 			{
+				if (loginQueue.get(position).getSecondsSinceLastAttempt() < 5)
+				{
+					loginQueue.remove(position);
+					event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, "You rejoined way to quick, you have been moved to the end of the login queue. Next time please join no less than every 10 seconds.");
+					return;
+				}
+				else
+				{
 				loginQueue.get(position).updateDate();
 				event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, "Your posistion in the queue is: " + (position + 1) + ". Please try again in no less than 10 seconds, and no more than 60 seconds.");
 				return;
+				}
 			}
 			else
 			{
