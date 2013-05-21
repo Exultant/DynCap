@@ -2,15 +2,18 @@
 #	%d is the queue position. Remember to include %d somewhere in the string, but only once, otherwise errors will occur.
 #
 #	toFastJoin is the message that gets sent to a client, if the client joins before minimumjointime has elapsed. 
-#	there are no %d in this strng. Only text.
+#	there is no %d in this strng. Only text.
 #
 #	updateMessage is the message that gets sent to a client, when it connects after having being added to the queue.
 #	%d is the queue position. Remember to include %d somewhere in the string, but only once, otherwise errors will occur.
 #
+#	BanMessage is the message that gets sent to a client if the client is on the ban list.
+#	there is no %d in this strng. Only text.
 messages:
   firstJoin: The server is full, you have been added to the login queue. Your current position is %d. Please try again in no less than 10 seconds, and no more than 60 seconds.
   toFastJoin: You rejoined way to quick, you have been moved to the end of the login queue. Next time please join no less than every 10 seconds.
   updateMessage: Your position in the queue is %d. Please try again in no less than 10 seconds, and no more than 60 seconds.
+  banMessage: You are banned. If you believe this is a mistake, message modmail at www.reddit.com/r/civcraft
 # all timers are in seconds.
 timers:
   #
@@ -23,6 +26,8 @@ timers:
   # before they are removed from the login queue.
   #
   timeOutTime: 60
+other:
+  initialDynCap: 175
 #
 # whiteListedPlayers: a list of players that can join imediatetly, even if there is a login queue.
 # Even though case is ignored in the code. Ie would recomend getting the case right.
@@ -31,4 +36,6 @@ timers:
 #
 whiteListedPlayers:
   ttk2: ttk2
-  notch: notch
+  hammond_of_texas: hammond_of_texas
+  ariehkovler: ariehkovler
+  spock_bot: spock_bot

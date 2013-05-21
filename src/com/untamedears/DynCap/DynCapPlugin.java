@@ -17,13 +17,14 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class DynCapPlugin extends JavaPlugin implements Listener {
 	private DynCapCommands commands;
-	private int dynamicPlayerCap = 1000;
+	private int dynamicPlayerCap = 175;
 	private Logger log;
 	//private boolean whiteListEnabled = false;
 	private List <QueueItem> loginQueue = new ArrayList<QueueItem>();
 	private String firstJoinMessage;
 	private String updateMessage;
 	private String toFastJoinMessage;
+	private String banMessage;
 	private int minimumJoinTime;
 	private int timeOutTime;
 	private Set<String> whiteListedPlayers;
@@ -60,12 +61,12 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 	{
 		FileConfiguration config = getConfig();
 		firstJoinMessage = config.getString("messages.firstJoin", "The server is full, you have been added to the login queue. Your current position is %d. Please try again in no less than 10 seconds, and no more than 60 seconds.");
-		//firstJoinMessage.replace("^d^", "%d");
 		toFastJoinMessage = config.getString("messages.toFastJoin", "You rejoined way to quick, you have been moved to the end of the login queue. Next time please join no less than every 10 seconds.");
 		updateMessage = config.getString("messages.updateMessage", "Your posistion in the queue is %d. Please try again in no less than 10 seconds, and no more than 60 seconds.");
-		//updateMessage.replace("^d^", "%d");
+		banMessage = config.getString("messages.banMessage", "You are banned. If you believe this is a mistake, message modmail at www.reddit.com/r/civcraft");
 		minimumJoinTime = config.getInt("timers.minimumJoinTime", 5);
 		timeOutTime = config.getInt("timers.timeOutTime", 60);
+		dynamicPlayerCap = config.getInt("other.initialDynCap", 175);
 		whiteListedPlayers = config.getConfigurationSection("whiteListedPlayers").getKeys(false);
 	}
 	
@@ -74,21 +75,6 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 	{
 		event.setMaxPlayers(getPlayerCap());
 	}
-
-	/*@EventHandler(priority=EventPriority.MONITOR)
-	public void onPlayerJoinEvent(PlayerJoinEvent event) {
-		updatePlayerCap(getPlayerCount());
-	}
-
-	@EventHandler(priority=EventPriority.MONITOR)
-	public void onPlayerQuitEvent(PlayerQuitEvent event) {
-		updatePlayerCap(getPlayerCount() - 1);
-	}
-
-	@EventHandler(priority=EventPriority.MONITOR)
-	public void onPlayerKickEvent(PlayerKickEvent event) {
-		updatePlayerCap(getPlayerCount() - 1);
-	}*/
 
 	public void setPlayerCap(int cap) {
 		dynamicPlayerCap = cap;
@@ -99,30 +85,6 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 		return dynamicPlayerCap;
 	}
 
-	/*private void updatePlayerCap(int playerCount) {
-		if (playerCount >= dynamicPlayerCap) {
-			//setWhitelist(true, playerCount);
-		} else if (playerCount < dynamicPlayerCap) {
-			//setWhitelist(false, playerCount);
-		}
-	}*/
-/*
-	private void setWhitelist(boolean enabled, int playerCount) {
-		if ((enabled && !whiteListEnabled) || (!enabled && whiteListEnabled)) {
-			Integer cap = getPlayerCap();
-			String state_message = "disabled";
-			if (enabled) {
-				state_message = "enabled";
-			}
-			String message = String.format(
-					"%d/%d players online dynamic cap %s.",
-					playerCount, cap, state_message);
-			log.info(message);
-		}
-		whiteListEnabled = enabled;
-		Bukkit.setWhitelist(enabled);
-	}*/
-
 	public int getPlayerCount() {
 		return this.getServer().getOnlinePlayers().length;
 	}
@@ -131,6 +93,19 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 	{
 		return loginQueue.size();
 	}
+	
+	public QueueItem getQueueItem(int queueIndex)
+	{
+		if (queueIndex < 0 || queueIndex >= loginQueue.size())
+		{
+			return null;
+		}
+		else
+		{
+			return loginQueue.get(queueIndex);
+		}
+	}
+		
 	@EventHandler(priority=EventPriority.LOWEST, ignoreCancelled = false)
 	public void onAsyncPlayerPreLoginEvent(AsyncPlayerPreLoginEvent event) 
 	{
@@ -143,8 +118,13 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 			event.allow();
 			return;
 		}
+		if(this.getServer().getBannedPlayers().contains(this.getServer().getOfflinePlayer(event.getName())))
+		{
+			event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, banMessage);
+			return;
+		}
 		
-		int position = getQueuePosition(loginQueue, playerName);
+		int position = getQueuePosition(playerName);
 		//log.info("posistion is:" + position);
 		//if the server is not full, and there is no queue
 		if ((getPlayerCount() < getPlayerCap() && loginQueue.isEmpty()))
@@ -202,17 +182,17 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
  
 	}
 	//returning -1  means error/not contained
-	private int getQueuePosition(List<QueueItem> queue, String name)
+	public int getQueuePosition(String name)
 	{
-		if (queue.isEmpty())
+		if (loginQueue.isEmpty())
 		{
 			//log.info("queue is empty!");
 			return -1;
 		}
-		for (int x = 0; x < queue.size(); x++)
+		for (int x = 0; x < loginQueue.size(); x++)
 		{
 			//log.info("x is:" + x + " and queueItem name is " + queue.get(x).getName() + " while paramter is " + name);
-			if (queue.get(x).getName().equalsIgnoreCase(name))
+			if (loginQueue.get(x).getName().equalsIgnoreCase(name))
 			{
 				return x;
 			}

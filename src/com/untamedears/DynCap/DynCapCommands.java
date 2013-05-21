@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 
 public class DynCapCommands implements CommandExecutor {
@@ -19,18 +20,23 @@ public class DynCapCommands implements CommandExecutor {
 	
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		//commands can only be issued from the console
+
+		if (label.equalsIgnoreCase("getQueueSize") || label.equalsIgnoreCase("gqs")) {
+			return getQueueSize(sender);
+		}
+		//commands below here can only be issued from the console
 		if (sender instanceof Player) {
 			return false;
 		}
+		
 		if (label.equalsIgnoreCase("setCap")) {
 			return setcapCmd(args);
 		} else if (label.equalsIgnoreCase("getCap")) {
 			return getcapCmd();
-		} else if (label.equalsIgnoreCase("getQueueSize")) {
-			return getQueueSize();
 		} else if (label.equalsIgnoreCase("reloadQueue")) {
 			return reloadQueueConfig();
+		} else if (label.equalsIgnoreCase("getqueueinfo") || label.equalsIgnoreCase("gqi")) {
+			return getqueueinfo(args);
 		}
 		return false;
 	}
@@ -60,11 +66,22 @@ public class DynCapCommands implements CommandExecutor {
 		return true;
 	}
 	
-	private boolean getQueueSize() 
+	private boolean getQueueSize(CommandSender sender) 
 	{
 		Integer queueSize = plugin.getQueueSize();
-		log.info(queueSize + " players in the queue.");
-		return true;
+		if (sender instanceof Player)
+		{
+			Player player = (Player) sender;
+			player.sendMessage(queueSize + " players are in the queue.");
+			return true;
+		}
+		else if (sender instanceof ConsoleCommandSender)
+		{
+			log.info(queueSize + " players in the queue.");
+			return true;
+		}
+
+		return false;
 	}
 
 	private boolean reloadQueueConfig() 
@@ -74,6 +91,82 @@ public class DynCapCommands implements CommandExecutor {
 		log.info("queue config reloaded");
 		return true;
 	}
-
-
+	
+	private boolean getqueueinfo(String[] args) 
+	{
+		if (args.length < 1 || args.length > 2) { return false; }
+		
+		if (args.length == 1)
+		{
+			//display info on 1 slot
+			if (isInteger(args[0]))
+			{
+				int startIndex = (Integer.parseInt(args[0]) - 1);
+				QueueItem queueItem = plugin.getQueueItem(startIndex);
+				if (queueItem != null)
+				{
+					log.info("Player name is " + queueItem.getName() + " . " + queueItem.getSecondsSinceLastAttempt() + " seconds have elapsed since " + queueItem.getName() + "'s last join attempt.");
+					return true;
+				}
+				else
+				{
+					log.info("Could not find information about index " + args[0]);
+					return false;
+				}
+			}
+			//search by name
+			else
+			{
+				String playerName = args[0];
+				int index = plugin.getQueuePosition(playerName);
+				if (index != -1)
+				{
+					QueueItem queueItem = plugin.getQueueItem(index);
+					log.info(playerName + " is number " + (index+1) + " in the login queue. " + queueItem.getSecondsSinceLastAttempt() + " seconds have elapsed since " + queueItem.getName() + "'s last join attempt.");
+					return true;
+				}
+				else
+				{
+					log.info("Could not find " + playerName + " in the queue.");
+					return false;
+				}
+			}
+		}
+		else if (args.length == 2)
+		{
+			if (isInteger(args[0]) && isInteger(args[1]))
+			{
+				int startIndex = (Integer.parseInt(args[0]) - 1);
+				int endIndex = (Integer.parseInt(args[1]) - 1);
+				for (int x = startIndex; x <= endIndex; x++)
+				{
+					QueueItem queueItem = plugin.getQueueItem(x);
+					if (queueItem != null)
+					{
+						log.info("Player name is " + queueItem.getName() + " . " + queueItem.getSecondsSinceLastAttempt() + " seconds have elapsed since " + queueItem.getName() + "'s last join attempt.");
+					}
+					else
+					{
+						log.info("Could not find information about index " + (x + 1));
+					}				
+				}
+				return true;
+			}
+			else
+			{
+				log.info("Please enter two integers above 0");
+			}
+		}
+		return false;
+	}
+	
+	private static boolean isInteger(String s) {
+	    try { 
+	        Integer.parseInt(s); 
+	    } catch(NumberFormatException e) { 
+	        return false; 
+	    }
+	    // only got here if we didn't return false
+	    return true;
+	}
 }
