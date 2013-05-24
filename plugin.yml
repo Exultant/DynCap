@@ -38,3 +38,9 @@ permissions:
   dyncap.console:
     description: Console commands for DynCap
     default: false
+  dyncap.debug:
+    description: Debug commands for DynCap
+    default: false
+  dyncap.debug.getqueueinfo:
+    description: Get queue info command for DynCap
+    default: false
