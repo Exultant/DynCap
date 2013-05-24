@@ -52,7 +52,7 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 		    @Override  
 		    public void run() 
 		    {
-		    	removeOldQueueItems(loginQueue, timeOutTime);
+		    	removeOldQueueItems(timeOutTime);
 		    }}, 0L, 100);		
 	}
 
@@ -224,20 +224,31 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 	}
 	
 	//timeOut is in seconds
-	private void removeOldQueueItems(List<QueueItem> queue, int timeOut)
+	private void removeOldQueueItems(int timeOut)
 	{
-		if (queue.isEmpty())
+		if (loginQueue.isEmpty())
 		{
 			return;
 		}
-		for (int x = 0; x< queue.size(); x++)
+		for (int x = 0; x< loginQueue.size(); x++)
 		{
-			if (queue.get(x).getSecondsSinceLastAttempt() > timeOut)
+			if (loginQueue.get(x).getSecondsSinceLastAttempt() > timeOut)
 			{
-				queue.remove(x);
-				x--;
+				loginQueue.remove(x);
+				x -- ;
 			}
 		}
+	}
+	
+	private void moveQueueItem(int oldIndex, int newIndex)
+	{
+		if (oldIndex < 0 || oldIndex >= loginQueue.size() || newIndex < 0 || newIndex >= loginQueue.size())
+		{
+			return;
+		}
+		QueueItem tempItem = loginQueue.get(oldIndex);
+		loginQueue.remove(oldIndex);
+		loginQueue.add(newIndex, tempItem);
 	}
 
 }

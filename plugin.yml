@@ -23,7 +23,7 @@ commands:
     description: Displays information about the supplied queue item.
     usage: /getqueueinfo <start index or player name> optional if first paramter is a index <end index>
     aliases: gqi
-    permission: dyncap.console
+    permission: dyncap.debug.getqueueinfo
   getjoinaverage:
     description: Gets the average amount of time spent in the login queue, before joining.
     usage: /getjoinaverage

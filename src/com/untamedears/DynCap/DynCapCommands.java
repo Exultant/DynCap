@@ -23,7 +23,10 @@ public class DynCapCommands implements CommandExecutor {
 
 		if (label.equalsIgnoreCase("getQueueSize") || label.equalsIgnoreCase("gqs")) {
 			return getQueueSize(sender);
+		} else if (label.equalsIgnoreCase("getqueueinfo") || label.equalsIgnoreCase("gqi")) {
+			return getQueueInfo(sender, args);
 		}
+		
 		//commands below here can only be issued from the console
 		if (sender instanceof Player) {
 			return false;
@@ -35,8 +38,6 @@ public class DynCapCommands implements CommandExecutor {
 			return getcapCmd();
 		} else if (label.equalsIgnoreCase("reloadQueue")) {
 			return reloadQueueConfig();
-		} else if (label.equalsIgnoreCase("getqueueinfo") || label.equalsIgnoreCase("gqi")) {
-			return getQueueInfo(args);
 		} else if (label.equalsIgnoreCase("getjoinaverage") || label.equalsIgnoreCase("gja")) {
 			return getJoinAverage();
 		} else if (label.equalsIgnoreCase("resetjoinaverage") || label.equalsIgnoreCase("rja")) {
@@ -72,19 +73,7 @@ public class DynCapCommands implements CommandExecutor {
 	private boolean getQueueSize(CommandSender sender) 
 	{
 		Integer queueSize = plugin.getQueueSize();
-		if (sender instanceof Player)
-		{
-			Player player = (Player) sender;
-			player.sendMessage(queueSize + " players are in the queue.");
-			return true;
-		}
-		else if (sender instanceof ConsoleCommandSender)
-		{
-			log.info(queueSize + " players in the queue.");
-			return true;
-		}
-
-		return false;
+		return sendMessage(sender, queueSize + " players are in the queue.");
 	}
 
 	private boolean reloadQueueConfig() 
@@ -95,8 +84,12 @@ public class DynCapCommands implements CommandExecutor {
 		return true;
 	}
 	
-	private boolean getQueueInfo(String[] args) 
+	private boolean getQueueInfo(CommandSender sender, String[] args) 
 	{
+		if (!sender.hasPermission("dyncap.debug.getQueueInfo"))
+		{
+			return false;
+		}
 		if (args.length < 1 || args.length > 2) { return false; }
 		
 		if (args.length == 1)
@@ -108,13 +101,11 @@ public class DynCapCommands implements CommandExecutor {
 				QueueItem queueItem = plugin.getQueueItem(startIndex);
 				if (queueItem != null)
 				{
-					log.info("Player name is " + queueItem.getName() + " . " + queueItem.getSecondsSinceLastAttempt() + " seconds have elapsed since " + queueItem.getName() + "'s last join attempt.");
-					return true;
+					return sendMessage(sender, startIndex + "     " + queueItem.getName() + "     " + queueItem.getSecondsSinceLastAttempt());
 				}
 				else
 				{
-					log.info("Could not find information about index " + args[0]);
-					return false;
+					return sendMessage(sender, "Could not find information about index " + args[0]);
 				}
 			}
 			//search by name
@@ -125,13 +116,11 @@ public class DynCapCommands implements CommandExecutor {
 				if (index != -1)
 				{
 					QueueItem queueItem = plugin.getQueueItem(index);
-					log.info(playerName + " is number " + (index+1) + " in the login queue. " + queueItem.getSecondsSinceLastAttempt() + " seconds have elapsed since " + queueItem.getName() + "'s last join attempt.");
-					return true;
+					return sendMessage(sender, index + "     " + queueItem.getName() + "     " + queueItem.getSecondsSinceLastAttempt() );
 				}
 				else
 				{
-					log.info("Could not find " + playerName + " in the queue.");
-					return false;
+					return sendMessage(sender, "Could not find " + playerName + " in the queue.");
 				}
 			}
 		}
@@ -146,18 +135,18 @@ public class DynCapCommands implements CommandExecutor {
 					QueueItem queueItem = plugin.getQueueItem(x);
 					if (queueItem != null)
 					{
-						log.info("Player name is " + queueItem.getName() + " . " + queueItem.getSecondsSinceLastAttempt() + " seconds have elapsed since " + queueItem.getName() + "'s last join attempt.");
+						sendMessage(sender, x + "     " + queueItem.getName() + "     " + queueItem.getSecondsSinceLastAttempt() );
 					}
 					else
 					{
-						log.info("Could not find information about index " + (x + 1));
+						sendMessage(sender, "Could not find information about index " + (x + 1));
 					}				
 				}
 				return true;
 			}
 			else
 			{
-				log.info("Please enter two integers above 0");
+				sendMessage(sender, "Please enter two integers above 0");
 			}
 		}
 		return false;
@@ -186,6 +175,22 @@ public class DynCapCommands implements CommandExecutor {
 		float average = plugin.getAverageTimeToJoin();
 		log.info("Average join time is " + average + " seconds.");
 		return true;
+	}
+	
+	private boolean sendMessage(CommandSender sender, String string)
+	{
+		if (sender instanceof Player)
+		{
+			Player player = (Player) sender;
+			player.sendMessage(string);
+			return true;
+		}
+		else if (sender instanceof ConsoleCommandSender)
+		{
+			log.info(string);
+			return true;
+		}
+		return false;
 	}
 
 }
