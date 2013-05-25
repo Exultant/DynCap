@@ -95,7 +95,7 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 		return loginQueue.size();
 	}
 	
-	public QueueItem getQueueItem(int queueIndex)
+	public synchronized QueueItem getQueueItem(int queueIndex)
 	{
 		if (queueIndex < 0 || queueIndex >= loginQueue.size())
 		{
@@ -110,83 +110,98 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 	@EventHandler(priority=EventPriority.LOWEST, ignoreCancelled = false)
 	public void onAsyncPlayerPreLoginEvent(AsyncPlayerPreLoginEvent event) 
 	{
-		//log.info("login event called!");
-		String playerName = event.getName().toLowerCase();
-		
-		//if the player is whitelisted(admin/mod)
-		if (whiteListedPlayers.contains(playerName))
+		try
 		{
-			event.allow();
-			return;
-		}
-		if(this.getServer().getBannedPlayers().contains(this.getServer().getOfflinePlayer(event.getName())))
-		{
-			event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, banMessage);
-			return;
-		}
-		
-		int position = getQueuePosition(playerName);
-		//log.info("posistion is:" + position);
-		//if the server is not full, and there is no queue
-		if ((getPlayerCount() < getPlayerCap() && loginQueue.isEmpty()))
-		{
-			//log.info("allowed " + playerName + " to join, server is not full and has no queue!");
-			event.allow();
-			updateAverageTimeToJoin(0);
-			return;
-		}
-		//server is either full, or has a queue
-		else
-		{
-			//if the server has a queue, but there is enough space for the player
-			if(position != -1 && position + 1 <= getPlayerCap() - getPlayerCount())
+			//log.info("login event called!");
+			String playerName = event.getName().toLowerCase();
+			
+			//if the player is whitelisted(admin/mod)
+			if (whiteListedPlayers.contains(playerName))
 			{
-				//log.info("allowed " + playerName + " to join, server is not full and he is in a queue!");
 				event.allow();
-				updateAverageTimeToJoin(loginQueue.get(position).getSecondsSinceFirstAttempt());
-				loginQueue.remove(position);
 				return;
 			}
-			//if the server has a queue, and there is not enough space for the player
-			else if (position != -1)
+			if(this.getServer().getBannedPlayers().contains(this.getServer().getOfflinePlayer(event.getName())))
 			{
-				if (loginQueue.get(position).getSecondsSinceLastAttempt() <= minimumJoinTime)
+				event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, banMessage);
+				return;
+			}
+			
+			int position = getQueuePosition(playerName);
+			//log.info("posistion is:" + position);
+			//if the server is not full, and there is no queue
+			if ((getPlayerCount() < getPlayerCap() && loginQueue.isEmpty()))
+			{
+				//log.info("allowed " + playerName + " to join, server is not full and has no queue!");
+				event.allow();
+				updateAverageTimeToJoin(0);
+				return;
+			}
+			//server is either full, or has a queue
+			else
+			{
+				//if the server has a queue, but there is enough space for the player
+				if(position != -1 && position + 1 <= getPlayerCap() - getPlayerCount())
 				{
-					loginQueue.remove(position);
-					event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, toFastJoinMessage);
+					//log.info("allowed " + playerName + " to join, server is not full and he is in a queue!");
+					event.allow();
+					updateAverageTimeToJoin(loginQueue.get(position).getSecondsSinceFirstAttempt());
+					removeFromQueue(position);
 					return;
+				}
+				//if the server has a queue, and there is not enough space for the player
+				else if (position != -1)
+				{
+					if (getQueueItem(position).getSecondsSinceLastAttempt() <= minimumJoinTime)
+					{
+						removeFromQueue(position);
+						event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, toFastJoinMessage);
+						return;
+					}
+					else
+					{
+					getQueueItem(position).updateDate();
+					event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, String.format(updateMessage, (position + 1)));
+					return;
+					}
 				}
 				else
 				{
-				loginQueue.get(position).updateDate();
-				event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, String.format(updateMessage, (position + 1)));
-				return;
-				}
-			}
-			else
-			{
-				if ((!loginQueue.isEmpty() && loginQueue.size() <= (getPlayerCap() - getPlayerCount())))
-				{
-					//if for some reason the person is in the queue remove them
-					if (position != -1)
+					if ((!loginQueue.isEmpty() && loginQueue.size() <= (getPlayerCap() - getPlayerCount())))
 					{
-						loginQueue.remove(position);
+						//if for some reason the person is in the queue remove them
+						if (position != -1)
+						{
+							removeFromQueue(position);
+						}
+						updateAverageTimeToJoin(0);
+						event.allow();
+						return;
 					}
-					updateAverageTimeToJoin(0);
-					event.allow();
+					//log.info("disallowed " + playerName + " added him to queue");
+					QueueItem queueItem = new QueueItem(playerName);
+					addToQueue(queueItem);
+					event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, String.format(firstJoinMessage, loginQueue.size()));
 					return;
 				}
-				//log.info("disallowed " + playerName + " added him to queue");
-				QueueItem queueItem = new QueueItem(playerName);
-				loginQueue.add(queueItem);
-				event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, String.format(firstJoinMessage, loginQueue.size()));
-				return;
 			}
 		}
- 
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+	
+	private synchronized void removeFromQueue(int index)
+	{
+		loginQueue.remove(index);
+	}
+	private synchronized void addToQueue(QueueItem queueItem)
+	{
+		loginQueue.add(queueItem);
 	}
 	//returning -1  means error/not contained
-	public int getQueuePosition(String name)
+	public synchronized int getQueuePosition(String name)
 	{
 		if (loginQueue.isEmpty())
 		{
@@ -196,13 +211,14 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 		for (int x = 0; x < loginQueue.size(); x++)
 		{
 			//log.info("x is:" + x + " and queueItem name is " + queue.get(x).getName() + " while paramter is " + name);
-			if (loginQueue.get(x).getName().equalsIgnoreCase(name))
+			if (getQueueItem(x).getName().equalsIgnoreCase(name))
 			{
 				return x;
 			}
 		}
 		return -1;
 	}	
+	
 	
 	public void updateAverageTimeToJoin(int newJoinTime)
 	{
@@ -224,7 +240,7 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 	}
 	
 	//timeOut is in seconds
-	private void removeOldQueueItems(int timeOut)
+	private synchronized void removeOldQueueItems(int timeOut)
 	{
 		if (loginQueue.isEmpty())
 		{
@@ -234,7 +250,7 @@ public class DynCapPlugin extends JavaPlugin implements Listener {
 		{
 			if (loginQueue.get(x).getSecondsSinceLastAttempt() > timeOut)
 			{
-				loginQueue.remove(x);
+				removeFromQueue(x);
 				x -- ;
 			}
 		}

@@ -86,7 +86,7 @@ public class DynCapCommands implements CommandExecutor {
 	
 	private boolean getQueueInfo(CommandSender sender, String[] args) 
 	{
-		if (!sender.hasPermission("dyncap.debug.getQueueInfo"))
+		if (!sender.hasPermission("dyncap.debug.getqueueinfo"))
 		{
 			return false;
 		}
